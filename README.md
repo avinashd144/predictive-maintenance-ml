@@ -190,3 +190,10 @@ This project is shared for portfolio and educational purposes. The AI4I 2020 dat
 ---
 
 *Part of my data analytics portfolio — [github.com/avinashd144](https://github.com/avinashd144)*
+
+## Author
+Avinash Desai — Data Analyst | PL-300 Certified | MSc Data Analytics (1:1) DBS
+
+🔗 LinkedIn https://www.linkedin.com/in/avinash-desai4/
+
+📧 desaiavinash93@gmail.com
