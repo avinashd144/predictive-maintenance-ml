@@ -92,7 +92,7 @@ Baseline Models          Ensemble/Boosting      K-Means Diagnostic
 ## Repository Structure
 
 ```
-predictive-maintenance-heavy-machinery/
+predictive-maintenance-ml/
 │
 ├── notebooks/
 │   └── predictive_maintenance_notebook.ipynb   # Full ML pipeline
