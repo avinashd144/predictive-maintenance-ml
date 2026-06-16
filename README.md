@@ -95,14 +95,14 @@ Baseline Models          Ensemble/Boosting      K-Means Diagnostic
 predictive-maintenance-heavy-machinery/
 │
 ├── notebooks/
-│   └── Avinash_CodeCA2_20032381_AppliedResearchProject.ipynb   # Full ML pipeline
+│   └── predictive_maintenance_notebook.ipynb   # Full ML pipeline
 │
 ├── data/
 │   └── Dataset1.xlsx                                            # AI4I 2020 dataset
 │
 ├── reports/
-│   ├── Avinash_ReportCA2_20032381_AppliedResearchProject.pdf   # 80-page thesis
-│   └── Avinash_SlidesCA2_20032381_AppliedResearchProject.pptx  # Presentation deck
+│   ├── predictive_maintenance_thesis_report.pdf   # 80-page thesis
+│   └── predictive_maintenance_slides.pptx  # Presentation deck
 │
 └── README.md
 ```
@@ -127,8 +127,8 @@ predictive-maintenance-heavy-machinery/
 
 ### 1. Clone the Repository
 ```bash
-git clone https://github.com/avinashd144/predictive-maintenance-heavy-machinery.git
-cd predictive-maintenance-heavy-machinery
+git clone https://github.com/avinashd144/predictive-maintenance-ml.git
+cd predictive-maintenance-ml
 ```
 
 ### 2. Install Dependencies
