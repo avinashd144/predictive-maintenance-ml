@@ -1,4 +1,4 @@
-# Predictive Maintenance in Heavy Machinery
+# Predictive Maintenance in Heavy Machinery using ML
 ### Machine Learning Approach Using Vibration and Temperature Sensor Data
 
 **MSc Data Analytics Dissertation | Dublin Business School | August 2025**  
