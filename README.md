@@ -10,7 +10,7 @@
 
 This project applies supervised machine learning to predict equipment failures in heavy machinery using the **AI4I 2020 Predictive Maintenance Dataset** (10,000 records, 14 features). The goal is to classify machine failure events from multivariate sensor data — including air temperature, process temperature, rotational speed, torque, and tool wear — before they occur.
 
-The work connects directly to 5 years of real-world industrial IoT analytics at John Deere Technology Center, where predictive maintenance and duty cycle analytics were applied to agricultural machinery at scale.
+The work connects directly to 5 years of real-world industrial IoT analytics at **John Deere Technology Center**, where predictive maintenance and duty cycle analytics were applied to agricultural machinery at scale — including IoT telemetry pipelines, engine oil prognosis algorithms, and duty cycle analytics across multiple sprayer variants.
 
 ### Research Questions
 
@@ -21,17 +21,21 @@ The work connects directly to 5 years of real-world industrial IoT analytics at 
 
 ## Results Summary
 
-| Model               | Accuracy | Precision | Recall | F1-Score | AUC  |
-|---------------------|----------|-----------|--------|----------|------|
-| Logistic Regression | 0.81     | 0.13      | 0.70   | 0.22     | 0.84 |
-| Random Forest       | 0.96     | 0.48      | 0.64   | 0.55     | 0.92 |
-| **XGBoost** ✅      | **0.96** | **0.49**  | **0.65** | **0.56** | **0.92** |
-| SVM                 | 0.91     | 0.25      | 0.70   | 0.36     | 0.90 |
-| KNN                 | 0.88     | 0.20      | 0.72   | 0.31     | 0.85 |
+> **Enhanced notebook** — 3 physics-based engineered features added (`Power_W`, `Temp_Diff_K`, `Torque_x_ToolWear`) improving Random Forest F1 from 0.55 → 0.68 and Precision from 0.48 → 0.65 vs original thesis results.
 
-> **Recall was prioritised as the primary metric** — in predictive maintenance, a missed failure (false negative) carries a higher operational cost than a false alarm.
+| Model | Accuracy | Precision | Recall | F1-Score | AUC |
+|---|---|---|---|---|---|
+| Logistic Regression | 0.85 | 0.16 | 0.72 | 0.26 | 0.87 |
+| **Random Forest** ✅ | **0.97** | **0.65** | **0.71** | **0.68** | **0.93** |
+| XGBoost | 0.98 | 0.70 | 0.66 | 0.68 | 0.92 |
+| SVM | 0.93 | 0.29 | 0.64 | 0.40 | 0.88 |
+| KNN | 0.90 | 0.22 | 0.66 | 0.33 | 0.86 |
 
-**Recommended model:** Tuned XGBoost with calibrated decision thresholds for recall-optimised deployment.
+> **Recommended model: Random Forest** — highest AUC (0.93) among models achieving Recall ≥ 0.65, with the best precision-recall balance (F1 = 0.68).
+
+> **Recall prioritised as primary metric** — in predictive maintenance, a missed failure (false negative) carries a higher operational cost than a false alarm.
+
+> **Threshold analysis:** Lowering the XGBoost decision threshold achieves Recall = 0.86 at the cost of lower precision — appropriate for recall-critical deployment where missing a failure is more costly than a false alarm.
 
 ---
 
@@ -39,17 +43,33 @@ The work connects directly to 5 years of real-world industrial IoT analytics at 
 
 **Source:** [AI4I 2020 Predictive Maintenance Dataset](https://archive.ics.uci.edu/dataset/601/ai4i+2020+predictive+maintenance+dataset) — UCI Machine Learning Repository
 
-| Property         | Detail                                      |
-|------------------|---------------------------------------------|
-| Rows             | 10,000                                      |
-| Features         | 14 (6 used for modelling after preprocessing) |
-| Target variable  | `Machine failure` (binary: 0 = No Failure, 1 = Failure) |
-| Class imbalance  | ~96.5% No Failure / ~3.5% Failure           |
-| Failure modes    | TWF, HDF, PWF, OSF, RNF (logical OR → target) |
+| Property | Detail |
+|---|---|
+| Rows | 10,000 |
+| Features | 14 (9 used for modelling: 6 original + 3 engineered) |
+| Target variable | `Machine failure` (binary: 0 = No Failure, 1 = Failure) |
+| Class imbalance | ~96.5% No Failure / ~3.5% Failure |
+| Failure modes | TWF, HDF, PWF, OSF, RNF (logical OR → target) |
 
 **Key features:** Machine Type (L/M/H), Air Temperature [K], Process Temperature [K], Rotational Speed [rpm], Torque [Nm], Tool Wear [min]
 
+**Dataset note:** Some rows have `Machine failure = 1` with all five mode flags = 0. This is a known characteristic of the AI4I 2020 dataset — likely related to random failures not captured by the named modes. The target variable `Machine failure` is used directly for modelling and this inconsistency does not affect results.
+
 > Dataset file: `data/Dataset1.xlsx`
+
+---
+
+## Feature Engineering
+
+Three physics-based features were engineered directly from the failure mode equations documented in the dataset:
+
+| Feature | Formula | Maps To | Failure Trigger |
+|---|---|---|---|
+| `Power_W` | Torque × (RPM × 2π/60) | PWF (Power Failure) | Power < 3500W or > 9000W |
+| `Temp_Diff_K` | Process Temp − Air Temp | HDF (Heat Dissipation Failure) | Temp Diff < 8.6K |
+| `Torque_x_ToolWear` | Torque × Tool Wear | OSF (Overstrain Failure) | Exceeds variant threshold |
+
+These three failure modes account for the majority of failure events. Engineering these features gives the model a direct signal for the most common failure causes — and each is fully defensible in a technical interview.
 
 ---
 
@@ -58,9 +78,13 @@ The work connects directly to 5 years of real-world industrial IoT analytics at 
 ```
 Data Collection (Dataset1.xlsx)
         ↓
-Data Loading & Cleaning
+Data Loading & Validation
         ↓
-EDA & Feature Engineering
+Exploratory Data Analysis
+(Target distribution, failure modes, distributions by failure class, correlation)
+        ↓
+Feature Engineering
+(Power_W, Temp_Diff_K, Torque_x_ToolWear)
         ↓
 Preprocessing (Encoding → Scaling → SMOTE)
         ↓
@@ -74,18 +98,19 @@ Baseline Models          Ensemble/Boosting      K-Means Diagnostic
                               ↓
          Evaluation (Confusion Matrix, ROC, PR Curve, AUC)
                               ↓
-          Interpretation & Feature Importance
+          Model Comparison + Threshold Analysis
                               ↓
-             Conclusion & Deployment Recommendations
+             Conclusions & Deployment Recommendations
 ```
 
 ### Key Techniques
 
-- **SMOTE** (Synthetic Minority Oversampling Technique) — applied to training data only to address class imbalance (training set balanced to 6,737 / 6,737)
-- **GridSearchCV** with Stratified K-Fold cross-validation for hyperparameter tuning
-- **StandardScaler** for feature normalisation (essential for LR, SVM, KNN)
-- **Label Encoding** for categorical Machine Type feature
-- **K-Means Clustering** (k=2, PCA projection) as unsupervised diagnostic
+- **Feature Engineering** — 3 physics-based features derived from failure mode equations
+- **SMOTE** — applied to training data only; balanced training set from 7,000 → 13,474 samples
+- **GridSearchCV** with Stratified K-Fold (5 folds) for hyperparameter tuning
+- **StandardScaler** — feature normalisation for LR, SVM, KNN
+- **Threshold Analysis** — operating point calibration for Recall ≥ 0.85
+- **K-Means Clustering** (k=2) — unsupervised diagnostic on original data (not SMOTE data)
 
 ---
 
@@ -95,15 +120,18 @@ Baseline Models          Ensemble/Boosting      K-Means Diagnostic
 predictive-maintenance-ml/
 │
 ├── notebooks/
-│   └── predictive_maintenance_notebook.ipynb   # Full ML pipeline
+│   ├── predictive_maintenance_notebook.ipynb        # Enhanced ML pipeline (use this)
+│   └── archive/
+│       └── predictive_maintenance_notebook_original.ipynb  # Original thesis version
 │
 ├── data/
-│   └── Dataset1.xlsx                                            # AI4I 2020 dataset
+│   └── Dataset1.xlsx                                # AI4I 2020 dataset
 │
 ├── reports/
-│   ├── predictive_maintenance_thesis_report.pdf   # 80-page thesis
-│   └── predictive_maintenance_slides.pptx  # Presentation deck
+│   ├── predictive_maintenance_thesis_report.pdf     # 80-page MSc thesis
+│   └── predictive_maintenance_slides.pptx           # Presentation deck
 │
+├── requirements.txt
 └── README.md
 ```
 
@@ -111,15 +139,15 @@ predictive-maintenance-ml/
 
 ## Tech Stack
 
-| Category              | Tools & Libraries                                      |
-|-----------------------|--------------------------------------------------------|
-| Language              | Python 3.9+                                            |
-| Data Manipulation     | pandas, NumPy                                          |
-| Visualisation         | Matplotlib, Seaborn                                    |
-| Machine Learning      | scikit-learn, XGBoost                                  |
-| Imbalance Handling    | imbalanced-learn (SMOTE)                               |
-| Dimensionality Red.   | PCA (for K-Means visualisation)                        |
-| Environment           | Google Colab (primary), Jupyter Notebook (compatible)  |
+| Category | Tools & Libraries |
+|---|---|
+| Language | Python 3.9+ |
+| Data Manipulation | pandas, NumPy |
+| Visualisation | Matplotlib, Seaborn |
+| Machine Learning | scikit-learn, XGBoost |
+| Imbalance Handling | imbalanced-learn (SMOTE) |
+| Dimensionality Reduction | PCA (for K-Means visualisation) |
+| Environment | Jupyter Notebook (local) / Google Colab (cloud) |
 
 ---
 
@@ -133,53 +161,54 @@ cd predictive-maintenance-ml
 
 ### 2. Install Dependencies
 ```bash
-pip install pandas numpy matplotlib seaborn scikit-learn xgboost imbalanced-learn openpyxl
+pip install -r requirements.txt
 ```
 
-### 3. Run in Google Colab (Recommended)
-- Upload `Dataset1.xlsx` to `/content/` in Colab
-- Open `notebooks/Avinash_CodeCA2_20032381_AppliedResearchProject.ipynb`
-- Run all cells sequentially
-
-### 4. Run Locally in Jupyter
+### 3. Run Locally in Jupyter
 ```bash
-jupyter notebook notebooks/Avinash_CodeCA2_20032381_AppliedResearchProject.ipynb
+jupyter notebook notebooks/predictive_maintenance_notebook.ipynb
 ```
-> Update the `input_file` path in the notebook from `/content/Dataset1.xlsx` to `../data/Dataset1.xlsx`
+> The notebook uses `DATA_PATH = '../data/Dataset1.xlsx'` for local runs — no path changes needed.
+
+### 4. Run in Google Colab
+- Upload `Dataset1.xlsx` to `/content/` in Colab
+- Change `DATA_PATH` in Section 1 from `'../data/Dataset1.xlsx'` to `'/content/Dataset1.xlsx'`
+- Run all cells sequentially
 
 ---
 
 ## Key Findings
 
-- **XGBoost and Random Forest** achieved the best overall performance (AUC = 0.92), delivering the best balance of recall and precision
-- **Torque [Nm] and Rotational Speed [rpm]** were the most important predictors of failure across both tree-based models
-- **SMOTE** significantly improved minority class detection — training set expanded from 7,000 → 13,474 samples post-resampling
-- **K-Means clustering** (k=2) revealed failure-enriched subpopulations, suggesting machine operating regime is a latent predictor of failure risk
-- **Logistic Regression** provided interpretable feature coefficients useful for stakeholder communication, despite lower precision
-- For recall-critical deployment: recommend XGBoost with threshold calibration (target Recall ≥ 0.85) + two-stage human verification workflow
+- **Random Forest** is the recommended production model — AUC = 0.93, Recall = 0.71, F1 = 0.68
+- **Physics-based feature engineering** improved Random Forest F1 by +13 points and Precision by +17 points vs original thesis results
+- **Torque and Rotational Speed** are the most important predictors across tree-based models
+- **SMOTE** significantly improved minority class detection — training set expanded from 7,000 to 13,474 samples
+- **K-Means clustering** (k=2) revealed a high-risk operating regime with 5.66% failure rate vs 1.35% in the low-risk cluster — a 4.2× difference
+- **Threshold calibration** on XGBoost achieves Recall = 0.86 by lowering the decision threshold — suitable for recall-critical deployment
 
 ---
 
 ## Industry Connection
 
-This project extends my 5 years of industrial data analytics experience at John Deere Technology Center (Pune), where I worked on:
-- IoT telemetry pipelines processing tens of GBs of CAN bus and sensor data
-- Engine oil prognosis algorithms achieving 90% accuracy vs SME assessments
-- Duty cycle analytics and predictive maintenance for agricultural sprayer equipment
+This project extends 5 years of industrial data analytics experience at **John Deere Technology Center (Pune)**, including:
 
-The academic methodology applied here (SMOTE, ensemble models, GridSearchCV, recall-focused evaluation) directly mirrors industry best practice for imbalanced failure classification problems.
+- IoT telemetry pipelines processing tens of GBs of CAN bus and sensor data from field-deployed agricultural sprayers
+- Engine oil prognosis algorithms achieving 90% accuracy vs SME assessments — shifting from reactive to predictive maintenance
+- Duty cycle analytics across 6–10 sprayer models using Power, RPM, and torque signals
+
+The feature engineering approach here — deriving `Power_W` from torque and RPM — directly mirrors the signal processing methodology used in real John Deere telemetry analytics.
 
 ---
 
 ## Academic Context
 
-| Item               | Detail                                                          |
-|--------------------|-----------------------------------------------------------------|
-| Degree             | MSc Data Analytics — First Class Honours (1:1)                  |
-| Institution        | Dublin Business School, Ireland                                 |
-| Module             | B9DA113 Applied Research Project                                |
-| Supervisor         | Sajal Kaur Minhas                                               |
-| Submission         | August 2025                                                     |
+| Item | Detail |
+|---|---|
+| Degree | MSc Data Analytics — First Class Honours (1:1) |
+| Institution | Dublin Business School, Ireland |
+| Module | B9DA113 Applied Research Project |
+| Supervisor | Sajal Kaur Minhas |
+| Submission | August 2025 |
 
 ---
 
@@ -191,9 +220,11 @@ This project is shared for portfolio and educational purposes. The AI4I 2020 dat
 
 *Part of my data analytics portfolio — [github.com/avinashd144](https://github.com/avinashd144)*
 
+---
+
 ## Author
-Avinash Desai — Data Analyst | PL-300 Certified | MSc Data Analytics (1:1) DBS
 
-🔗 LinkedIn https://www.linkedin.com/in/avinash-desai4/
+**Avinash Desai** — Data Analyst | PL-300 Certified | MSc Data Analytics (1:1) DBS
 
+🔗 [LinkedIn](https://www.linkedin.com/in/avinash-desai4/)  
 📧 desaiavinash93@gmail.com
